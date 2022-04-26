@@ -155,6 +155,28 @@ Below are some of the settings you may want to use. These should be defined in y
             return crud_info
     ```
 
+## Customising model queryset
+Sometimes, you want to customise the queryset method used for fetching a specific instance.
+For example, when using the [django-softdelete](https://django-safedelete.readthedocs.io/en/latest/) package and you want to record the `undelete` actions.
+
+In order to customise the queryset used, add a `EASY_AUDIT_QUERYSET_METHOD` field to the specific model.
+
+The value should be the name of the model static method that returns the needed queryset.
+
+Example:
+```python
+class MyModel(models.Model):
+    ...
+
+    EASY_AUDIT_QUERYSET_METHOD = 'get_easyaudit_queryset'
+
+    ...
+
+    @staticmethod
+    def get_easyaudit_queryset():
+        return MyModel.objects.all_with_deleted()
+```
+
 ## What does it do
 
 Django Easy Audit uses [Django signals](https://docs.djangoproject.com/en/dev/topics/signals/)
