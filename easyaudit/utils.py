@@ -99,9 +99,10 @@ def get_m2m_field_name(model, instance):
 
 
 def get_model_queryset(model):
-    queryset_method_name = getattr(model, "EASY_AUDIT_QUERYSET_METHOD", None)
+    queryset_method_name = getattr(model, "EASY_AUDIT_QUERYSET_METHOD", "get_easyaudit_queryset")
+    queryset_method = getattr(model, queryset_method_name, None)
 
-    if not queryset_method_name:
-        return model.objects.all()
+    if callable(queryset_method):
+        return queryset_method()
 
-    return getattr(model, queryset_method_name)()
+    return model.objects.all()
