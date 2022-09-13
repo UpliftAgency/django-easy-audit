@@ -47,7 +47,6 @@ class EasyAuditMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        # seems redundant w/process_request, but keeping in for now.
         _thread_locals.request = request
 
         response = self.get_response(request)
