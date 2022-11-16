@@ -218,3 +218,7 @@ begins logging everything right away, without you having to inject code anywhere
 
 Find us on Twitter at [@upliftltd](https://twitter.com/upliftltd),
 or send me an email to [opensource@uplift.ltd](mailto:opensource@uplift.ltd).
+
+## Locally install dependencies
+* Generate egg information `python setup.py egg_info`
+* Install dependencies `pip install -r django_easy_audit.egg-info/requires.txt`
