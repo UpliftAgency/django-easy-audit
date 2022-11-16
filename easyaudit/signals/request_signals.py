@@ -47,7 +47,7 @@ def request_started_handler(sender, **kwargs):
     if environ:
         path = environ["PATH_INFO"]
         cookie_string = environ.get("HTTP_COOKIE")
-        remote_ip = environ[REMOTE_ADDR_HEADER]
+        remote_ip = environ.get(REMOTE_ADDR_HEADER, None)
         method = environ["REQUEST_METHOD"]
         query_string = environ["QUERY_STRING"]
 
@@ -58,8 +58,7 @@ def request_started_handler(sender, **kwargs):
         cookie_string = headers.get(b"cookie")
         if isinstance(cookie_string, bytes):
             cookie_string = cookie_string.decode("utf-8")
-        server = scope.get("server")
-        remote_ip = "{s_ip}:{s_port}".format(s_ip=server[0], s_port=server[1])
+        remote_ip = list(scope.get('client', ('0.0.0.0', 0)))[0]
         query_string = scope.get("query_string")
 
     if not should_log_url(path):
@@ -85,8 +84,7 @@ def request_started_handler(sender, **kwargs):
                 session = None
 
             if session:
-                user_id = session.get("_auth_user_id")
-
+                user_id = session.get_decoded().get('_auth_user_id')
                 try:
                     user = get_user_model().objects.get(id=user_id)
                 except Exception:
