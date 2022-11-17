@@ -222,3 +222,7 @@ or send me an email to [opensource@uplift.ltd](mailto:opensource@uplift.ltd).
 ## Locally install dependencies
 * Generate egg information `python setup.py egg_info`
 * Install dependencies `pip install -r django_easy_audit.egg-info/requires.txt`
+
+## Run tests locally
+* `cd ./easyaudit/tests`
+* `python -m manage test`

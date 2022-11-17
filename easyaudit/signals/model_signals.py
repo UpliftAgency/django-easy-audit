@@ -1,5 +1,6 @@
 import json
 import logging
+from collections.abc import Iterable
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -265,7 +266,13 @@ def m2m_changed(sender, instance, action, reverse, model, pk_set, using, **kwarg
                     if action == "post_clear":
                         changed_fields = []
                     else:
-                        changed_fields = {get_m2m_field_name(model, instance): list(pk_set)}
+                        pks = pk_set
+                        if isinstance(pks, Iterable):
+                            pks = (str(pk) for pk in pks)
+                        else:
+                            pks = str(pks)
+
+                        changed_fields = {get_m2m_field_name(model, instance): list(pks)}
                     with transaction.atomic(using=DATABASE_ALIAS):
                         crud_event = audit_logger.crud({
                             'event_type': event_type,
