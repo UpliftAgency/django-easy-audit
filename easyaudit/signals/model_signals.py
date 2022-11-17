@@ -1,6 +1,7 @@
 import json
 import logging
 from collections.abc import Iterable
+from uuid import UUID
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -268,9 +269,9 @@ def m2m_changed(sender, instance, action, reverse, model, pk_set, using, **kwarg
                     else:
                         pks = pk_set
                         if isinstance(pks, Iterable):
-                            pks = (str(pk) for pk in pks)
+                            pks = (format_primary_key(pk) for pk in pks)
                         else:
-                            pks = str(pks)
+                            pks = format_primary_key(pks)
 
                         changed_fields = {get_m2m_field_name(model, instance): list(pks)}
                     with transaction.atomic(using=DATABASE_ALIAS):
@@ -354,3 +355,9 @@ if WATCH_MODEL_EVENTS:
     signals.pre_save.connect(pre_save, dispatch_uid='easy_audit_signals_pre_save')
     signals.m2m_changed.connect(m2m_changed, dispatch_uid='easy_audit_signals_m2m_changed')
     signals.post_delete.connect(post_delete, dispatch_uid='easy_audit_signals_post_delete')
+
+
+def format_primary_key(pk):
+    if isinstance(pk, UUID):
+        return str(pk)
+    return pk
