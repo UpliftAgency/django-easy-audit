@@ -1,5 +1,7 @@
 import json
 import logging
+from collections.abc import Iterable
+from uuid import UUID
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -46,6 +48,23 @@ def should_audit(instance):
     return True
 
 
+def get_current_user_details():
+    user_id = None
+    user_pk_as_string = None
+
+    try:
+        user = get_current_user()
+        if user and not isinstance(user, AnonymousUser):
+            if getattr(settings, "DJANGO_EASY_AUDIT_CHECK_IF_REQUEST_USER_EXISTS", True):
+                # validate that the user still exists
+                user = get_user_model().objects.get(pk=user.pk)
+            user_id, user_pk_as_string = user.id, str(user.pk)
+    except:
+        pass
+
+    return user_id, user_pk_as_string
+
+
 # signals
 def pre_save(sender, instance, raw, using, update_fields, **kwargs):
     """https://docs.djangoproject.com/es/1.10/ref/signals/#post-save"""
@@ -54,9 +73,10 @@ def pre_save(sender, instance, raw, using, update_fields, **kwargs):
         return
 
     try:
+        if not should_audit(instance):
+            return False
+
         with transaction.atomic(using=using):
-            if not should_audit(instance):
-                return False
             try:
                 object_json_repr = serializers.serialize("json", [instance])
             except Exception:
@@ -77,15 +97,7 @@ def pre_save(sender, instance, raw, using, update_fields, **kwargs):
                 event_type = CRUDEvent.UPDATE
 
             # user
-            try:
-                user = get_current_user()
-                # validate that the user still exists
-                user = get_user_model().objects.get(pk=user.pk)
-            except:
-                user = None
-
-            if isinstance(user, AnonymousUser):
-                user = None
+            user_id, user_pk_as_string = get_current_user_details()
 
             # callbacks
             kwargs['request'] = get_current_request()  # make request available for callbacks
@@ -107,9 +119,9 @@ def pre_save(sender, instance, raw, using, update_fields, **kwargs):
                                 'changed_fields': changed_fields,
                                 'content_type_id': c_t.id,
                                 'object_id': instance.pk,
-                                'user_id': getattr(user, 'id', None),
+                                'user_id': user_id,
                                 'datetime': timezone.now(),
-                                'user_pk_as_string': str(user.pk) if user else user
+                                'user_pk_as_string': user_pk_as_string,
                             })
                     except Exception as e:
                         try:
@@ -133,9 +145,10 @@ def post_save(sender, instance, created, raw, using, update_fields, **kwargs):
         return
 
     try:
+        if not should_audit(instance):
+            return False
+
         with transaction.atomic(using=using):
-            if not should_audit(instance):
-                return False
             object_json_repr = serializers.serialize("json", [instance])
 
             # created or updated?
@@ -143,15 +156,7 @@ def post_save(sender, instance, created, raw, using, update_fields, **kwargs):
                 event_type = CRUDEvent.CREATE
 
             # user
-            try:
-                user = get_current_user()
-                # validate that the user still exists
-                user = get_user_model().objects.get(pk=user.pk)
-            except:
-                user = None
-
-            if isinstance(user, AnonymousUser):
-                user = None
+            user_id, user_pk_as_string = get_current_user_details()
 
             # callbacks
             kwargs['request'] = get_current_request()  # make request available for callbacks
@@ -173,9 +178,9 @@ def post_save(sender, instance, created, raw, using, update_fields, **kwargs):
                                 'object_json_repr': object_json_repr,
                                 'content_type_id': c_t.id,
                                 'object_id': instance.pk,
-                                'user_id': getattr(user, 'id', None),
+                                'user_id': user_id,
                                 'datetime': timezone.now(),
-                                'user_pk_as_string': str(user.pk) if user else user
+                                'user_pk_as_string': user_pk_as_string
                             })
                     except Exception as e:
                         try:
@@ -212,13 +217,12 @@ def _m2m_rev_field_name(model1, model2):
 def m2m_changed(sender, instance, action, reverse, model, pk_set, using, **kwargs):
     """https://docs.djangoproject.com/es/1.10/ref/signals/#m2m-changed"""
     try:
+        if not should_audit(instance):
+            return False
+        if action not in ("post_add", "post_remove", "post_clear"):
+            return False
+
         with transaction.atomic(using=using):
-            if not should_audit(instance):
-                return False
-
-            if action not in ("post_add", "post_remove", "post_clear"):
-                return False
-
             object_json_repr = serializers.serialize("json", [instance])
 
             if reverse:
@@ -242,7 +246,7 @@ def m2m_changed(sender, instance, action, reverse, model, pk_set, using, **kwarg
                 tmp_repr[0]['m2m_rev_model'] = force_str(model._meta)
                 tmp_repr[0]['m2m_rev_pks'] = related_ids
                 tmp_repr[0]['m2m_rev_action'] = action
-                object_json_repr = json.dumps(tmp_repr)
+                object_json_repr = json.dumps(tmp_repr, cls=DjangoJSONEncoder)
             else:
                 if action == 'post_add':
                     event_type = CRUDEvent.M2M_ADD
@@ -254,15 +258,8 @@ def m2m_changed(sender, instance, action, reverse, model, pk_set, using, **kwarg
                     event_type = CRUDEvent.M2M_CHANGE  # just in case
 
             # user
-            try:
-                user = get_current_user()
-                # validate that the user still exists
-                user = get_user_model().objects.get(pk=user.pk)
-            except:
-                user = None
+            user_id, user_pk_as_string = get_current_user_details()
 
-            if isinstance(user, AnonymousUser):
-                user = None
             c_t = ContentType.objects.get_for_model(instance)
 
             def crud_flow():
@@ -270,7 +267,13 @@ def m2m_changed(sender, instance, action, reverse, model, pk_set, using, **kwarg
                     if action == "post_clear":
                         changed_fields = []
                     else:
-                        changed_fields = {get_m2m_field_name(model, instance): list(pk_set)}
+                        pks = pk_set
+                        if isinstance(pks, Iterable):
+                            pks = (format_primary_key(pk) for pk in pks)
+                        else:
+                            pks = format_primary_key(pks)
+
+                        changed_fields = {get_m2m_field_name(model, instance): list(pks)}
                     with transaction.atomic(using=DATABASE_ALIAS):
                         crud_event = audit_logger.crud({
                             'event_type': event_type,
@@ -279,9 +282,9 @@ def m2m_changed(sender, instance, action, reverse, model, pk_set, using, **kwarg
                             'changed_fields': changed_fields,
                             'content_type_id': c_t.id,
                             'object_id': instance.pk,
-                            'user_id': getattr(user, 'id', None),
+                            'user_id': user_id,
                             'datetime': timezone.now(),
-                            'user_pk_as_string': str(user.pk) if user else user
+                            'user_pk_as_string': user_pk_as_string
                         })
                 except Exception as e:
                     try:
@@ -302,22 +305,15 @@ def m2m_changed(sender, instance, action, reverse, model, pk_set, using, **kwarg
 def post_delete(sender, instance, using, **kwargs):
     """https://docs.djangoproject.com/es/1.10/ref/signals/#post-delete"""
     try:
-        with transaction.atomic(using=using):
-            if not should_audit(instance):
-                return False
+        if not should_audit(instance):
+            return False
 
+        with transaction.atomic(using=using):
             object_json_repr = serializers.serialize("json", [instance])
 
             # user
-            try:
-                user = get_current_user()
-                # validate that the user still exists
-                user = get_user_model().objects.get(pk=user.pk)
-            except:
-                user = None
+            user_id, user_pk_as_string = get_current_user_details()
 
-            if isinstance(user, AnonymousUser):
-                user = None
             c_t = ContentType.objects.get_for_model(instance)
 
             # object id to be used later
@@ -333,9 +329,9 @@ def post_delete(sender, instance, using, **kwargs):
                             'object_json_repr': object_json_repr,
                             'content_type_id': c_t.id,
                             'object_id': obj_id,
-                            'user_id': getattr(user, 'id', None),
+                            'user_id': user_id,
                             'datetime': timezone.now(),
-                            'user_pk_as_string': str(user.pk) if user else user
+                            'user_pk_as_string': user_pk_as_string
                         })
 
                 except Exception as e:
@@ -359,3 +355,9 @@ if WATCH_MODEL_EVENTS:
     signals.pre_save.connect(pre_save, dispatch_uid='easy_audit_signals_pre_save')
     signals.m2m_changed.connect(m2m_changed, dispatch_uid='easy_audit_signals_m2m_changed')
     signals.post_delete.connect(post_delete, dispatch_uid='easy_audit_signals_post_delete')
+
+
+def format_primary_key(pk):
+    if isinstance(pk, UUID):
+        return str(pk)
+    return pk
