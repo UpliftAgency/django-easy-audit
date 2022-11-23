@@ -225,7 +225,7 @@ class ModelC(models.Model):
         return dict(model_b_id=self.parent_id, model_a_id=self.parent.parent_id)
 ```
 
-With this setup you can now fetch all changes from `ModelB` and `ModelC`that are related to a specific `ModelA` instance in one query.
+With this setup you can now fetch all changes from `ModelB` and `ModelC` related to a specific `ModelA` instance in one query.
 
 ## What does it do
 
