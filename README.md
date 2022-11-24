@@ -194,7 +194,7 @@ class MyOtherModel(models.Model):
 You can leverage the `CRUDChange.metadata` JSON field when you want to save some other related data to each change. For example when aggregating the changes across multiple models by some specific business logic.
 To populate this field, you should declare a method on the model that requires it.
 
-The default method name is `get_easyaudit_metadata`, but it can be configured by adding the `EASY_AUDIT_METADATA_METHOD`field on the model.
+The default method name is `get_easyaudit_metadata`, but it can be configured by defining the `EASY_AUDIT_METADATA_METHOD` field on the model.
 
 Example:
 ```python
@@ -225,7 +225,7 @@ class ModelC(models.Model):
         return dict(model_b_id=self.parent_id, model_a_id=self.parent.parent_id)
 ```
 
-With this setup you can now fetch all changes from `ModelB` and `ModelC`that are related to a specific `ModelA` instance in one query.
+With this setup you can now fetch all changes from `ModelB` and `ModelC` related to a specific `ModelA` instance in one query.
 
 ## What does it do
 
