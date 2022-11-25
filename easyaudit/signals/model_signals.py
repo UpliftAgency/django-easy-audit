@@ -124,7 +124,7 @@ def pre_save(sender, instance, raw, using, update_fields, **kwargs):
                                 'user_id': user_id,
                                 'datetime': timezone.now(),
                                 'user_pk_as_string': user_pk_as_string,
-                                'metadata': get_instance_metadata(instance)
+                                'metadata': get_instance_metadata(instance, changed_fields)
                             })
                     except Exception as e:
                         try:
@@ -289,7 +289,7 @@ def m2m_changed(sender, instance, action, reverse, model, pk_set, using, **kwarg
                             'user_id': user_id,
                             'datetime': timezone.now(),
                             'user_pk_as_string': user_pk_as_string,
-                            'metadata': get_instance_metadata(instance)
+                            'metadata': get_instance_metadata(instance, changed_fields)
                         })
                 except Exception as e:
                     try:

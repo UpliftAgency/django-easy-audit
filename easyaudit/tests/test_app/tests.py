@@ -151,6 +151,16 @@ class TestMetadataModels(TestCase):
         )
         self.assertEqual(1, crud_event_qs.count())
 
+        obj_b.name = "Name updated"
+        obj_b.save()
+        crud_event_qs = CRUDEvent.objects.filter(
+            object_id=obj_b.id,
+            content_type=ContentType.objects.get_for_model(TestMetadataBModel),
+            metadata__model_a_id=obj_a.id,
+            metadata__last_name_change__isnull=False
+        )
+        self.assertEqual(1, crud_event_qs.count())
+
         obj_c = TestMetadataCModel.objects.create(model_b=obj_b)
         crud_event_qs = CRUDEvent.objects.filter(
             object_id=obj_c.id,
@@ -162,7 +172,7 @@ class TestMetadataModels(TestCase):
         crud_event_qs = CRUDEvent.objects.filter(
             metadata__model_a_id=obj_a.id
         )
-        self.assertEqual(2, crud_event_qs.count())
+        self.assertEqual(3, crud_event_qs.count())
 
 
 class TestAuditBigIntModels(TestAuditModels):

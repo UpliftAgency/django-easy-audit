@@ -195,6 +195,7 @@ You can leverage the `CRUDChange.metadata` JSON field when you want to save some
 To populate this field, you should declare a method on the model that requires it.
 
 The default method name is `get_easyaudit_metadata`, but it can be configured by defining the `EASY_AUDIT_METADATA_METHOD` field on the model.
+The method also accepts `changed_fields` that contains the fields that were changed on the current event.
 
 Example:
 ```python
@@ -206,7 +207,7 @@ class ModelB(models.Model):
     
     ...
 
-    def get_easyaudit_metadata(self):
+    def get_easyaudit_metadata(self, *args, **kwargs):
         return dict(model_a_id=self.parent_id)
 
     ...
@@ -221,8 +222,14 @@ class ModelC(models.Model):
 
     ...
 
-    def fetch_metadata(self):
-        return dict(model_b_id=self.parent_id, model_a_id=self.parent.parent_id)
+    def fetch_metadata(self, changed_fields):
+        metadata = dict(model_b_id=self.parent_id, model_a_id=self.parent.parent_id) 
+        
+        if changed_fields:
+          # Update the metadata somehow from the changed_fields
+            ...
+
+        return metadata
 ```
 
 With this setup you can now fetch all changes from `ModelB` and `ModelC` related to a specific `ModelA` instance in one query.

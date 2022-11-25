@@ -1,6 +1,7 @@
 import uuid
 
 from django.db import models
+from django.utils import timezone
 
 
 class TestModel(models.Model):
@@ -66,8 +67,13 @@ class TestMetadataBModel(models.Model):
 
     model_a = models.ForeignKey(TestMetadataAModel, on_delete=models.CASCADE)
 
-    def get_easyaudit_metadata(self):
-        return dict(model_a_id=self.model_a_id)
+    def get_easyaudit_metadata(self, changed_fields):
+        metadata = dict(model_a_id=self.model_a_id)
+
+        if changed_fields and "name" in changed_fields:
+            metadata.update({"last_name_change": str(timezone.now())})
+
+        return metadata
 
 
 class TestMetadataCModel(models.Model):
@@ -77,5 +83,5 @@ class TestMetadataCModel(models.Model):
 
     model_b = models.ForeignKey(TestMetadataBModel, on_delete=models.CASCADE)
 
-    def fetch_metadata(self):
+    def fetch_metadata(self, *args, **kwargs):
         return dict(model_a_id=self.model_b.model_a_id, model_b_id=self.model_b.id)

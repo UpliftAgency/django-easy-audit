@@ -108,11 +108,11 @@ def get_model_queryset(model):
     return model.objects.all()
 
 
-def get_instance_metadata(instance):
+def get_instance_metadata(instance, changed_fields=None):
     metadata_method_name = getattr(instance, "EASY_AUDIT_METADATA_METHOD", "get_easyaudit_metadata")
     metadata_method = getattr(instance, metadata_method_name, None)
 
     if callable(metadata_method):
-        return metadata_method()
+        return metadata_method(changed_fields)
 
     return None
