@@ -18,7 +18,8 @@ import bs4
 from test_app.models import (
     TestModel, TestForeignKey, TestM2M,
     TestBigIntModel, TestBigIntForeignKey, TestBigIntM2M,
-    TestUUIDModel, TestUUIDForeignKey, TestUUIDM2M
+    TestUUIDModel, TestUUIDForeignKey, TestUUIDM2M,
+    TestMetadataAModel, TestMetadataBModel, TestMetadataCModel
 )
 from easyaudit.models import CRUDEvent, RequestEvent
 from easyaudit.middleware.easyaudit import set_current_user, clear_request
@@ -129,6 +130,49 @@ class TestAuditUUIDModels(TestAuditModels):
     Model = TestUUIDModel
     FKModel = TestUUIDForeignKey
     M2MModel = TestUUIDM2M
+
+
+@override_settings(TEST=True)
+class TestMetadataModels(TestCase):
+    def test_metadata_is_populated(self):
+        obj_a = TestMetadataAModel.objects.create()
+        crud_event_qs = CRUDEvent.objects.filter(
+            object_id=obj_a.id,
+            content_type=ContentType.objects.get_for_model(TestMetadataAModel),
+            metadata__isnull=True
+        )
+        self.assertEqual(1, crud_event_qs.count())
+
+        obj_b = TestMetadataBModel.objects.create(model_a=obj_a)
+        crud_event_qs = CRUDEvent.objects.filter(
+            object_id=obj_b.id,
+            content_type=ContentType.objects.get_for_model(TestMetadataBModel),
+            metadata=dict(model_a_id=obj_a.id)
+        )
+        self.assertEqual(1, crud_event_qs.count())
+
+        obj_b.name = "Name updated"
+        obj_b.save()
+        crud_event_qs = CRUDEvent.objects.filter(
+            object_id=obj_b.id,
+            content_type=ContentType.objects.get_for_model(TestMetadataBModel),
+            metadata__model_a_id=obj_a.id,
+            metadata__last_name_change__isnull=False
+        )
+        self.assertEqual(1, crud_event_qs.count())
+
+        obj_c = TestMetadataCModel.objects.create(model_b=obj_b)
+        crud_event_qs = CRUDEvent.objects.filter(
+            object_id=obj_c.id,
+            content_type=ContentType.objects.get_for_model(TestMetadataCModel),
+            metadata=dict(model_a_id=obj_a.id, model_b_id=obj_b.id)
+        )
+        self.assertEqual(1, crud_event_qs.count())
+
+        crud_event_qs = CRUDEvent.objects.filter(
+            metadata__model_a_id=obj_a.id
+        )
+        self.assertEqual(3, crud_event_qs.count())
 
 
 class TestAuditBigIntModels(TestAuditModels):
