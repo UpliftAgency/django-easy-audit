@@ -11,11 +11,6 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AlterField(
-            model_name='requestevent',
-            name='datetime',
-            field=models.DateTimeField(auto_now_add=True, db_index=True, verbose_name='Date time'),
-        ),
-        migrations.AlterField(
             model_name='crudevent',
             name='changed_fields',
             field=models.JSONField(blank=True, null=True, verbose_name='Changed fields'),
@@ -23,7 +18,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='crudevent',
             name='object_json_repr',
-            field=models.JSONField(blank=True, null=True, verbose_name='Object JSON representation'),
+            field=models.TextField(blank=True, default='', verbose_name='Object JSON representation'),
         ),
         migrations.AlterField(
             model_name='crudevent',

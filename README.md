@@ -1,5 +1,8 @@
 # django-easy-audit
 
+[![pypi](https://img.shields.io/pypi/v/django-easy-audit.svg)](https://pypi.org/project/django-easy-audit/)
+![PyPI - Django Version](https://img.shields.io/pypi/frameworkversions/django/django-easy-audit)
+
 Yet another Django audit log app, hopefully the easiest one.
 
 This app allows you to keep track of every action taken by your users.
@@ -8,7 +11,7 @@ This app allows you to keep track of every action taken by your users.
 
 1. Install Django Easy Audit by running `pip install django-easy-audit`.
 
-   * Alternatively, you can download the [latest release](https://github.com/soynatan/django-easy-audit/releases) from GitHub, unzip it, and place the folder 'easyaudit' in the root of your project._
+   _Alternatively, you can download the [latest release](https://github.com/soynatan/django-easy-audit/releases) from GitHub, unzip it, and place the folder 'easyaudit' in the root of your project._
 
 2. Add 'easyaudit' to your `INSTALLED_APPS` like this:
 
@@ -125,19 +128,7 @@ Below are some of the settings you may want to use. These should be defined in y
   superuser. Set this to `True` if you wish to make the recorded events read-only through the admin
   UI.
 
-* `DJANGO_EASY_AUDIT_FIELD_VALUE_RESOLVER_MAP`
-  `easyaudit` uses `smart_str` for field values by default, with the exception of DateTimeField. `DJANGO_EASY_AUDIT_FIELD_VALUE_RESOLVER_MAP` extends the ability to customize field values to more fields. The resolver map should be a map of class -> field value resolver. The field value resolver fn will be provided the object and the field.
-
-  An example of the usefulness would be customizing value of FK. Instead of calling `__str__` on the instance, we might want the PK instead.
-
-  def resolve_fk_value(object, field):
-  return object.pk
-
-  DJANGO_EASY_AUDIT_FIELD_VALUE_RESOLVER_MAP = {
-  ForeignKey: resolve_fk_value
-  }
-
-* `DJANGO_EASY_AUDIT_LOGGING_BACKEND`
+- `DJANGO_EASY_AUDIT_LOGGING_BACKEND`
 
   A pluggable backend option for logging. Defaults to `easyaudit.backends.ModelBackend`.
   This class expects to have 3 methods:
@@ -168,37 +159,6 @@ Below are some of the settings you may want to use. These should be defined in y
             self.logger.info(msg='your message', extra=crud_info)
             return crud_info
   ```
-
-## Customising model queryset
-
-Sometimes, you want to customise the queryset method used for fetching a specific instance.
-For example, when using the [django-softdelete](https://django-safedelete.readthedocs.io/en/latest/) package and you want to record the `undelete` actions.
-
-In order to customise the queryset used, add a method named `get_easyaudit_queryset` to your model. The name of the method can be customized per model by setting the `EASY_AUDIT_QUERYSET_METHOD` attribute to the name of the method to use.
-
-The value should be the name of the model method that returns the needed queryset.
-
-Example:
-
-```python
-class MyModel(models.Model):
-    ...
-
-    @classmethod
-    def get_easyaudit_queryset(cls):
-        return cls.objects.all_with_deleted()
-
-
-# Customize the queryset method used by easyaudit
-class MyOtherModel(models.Model):
-    EASY_AUDIT_QUERYSET_METHOD = 'get_scoped_queryset'
-
-    ...
-
-    @classmethod
-    def get_scoped_queryset(cls):
-        return cls.objects.filter(users__count__gt=0, owner__is_active=True)
-```
 
 ## What does it do
 
@@ -231,13 +191,5 @@ Interested in contributing to `django-easy-audit`? Please read our [Contribution
 
 ## Contact
 
-Find us on Twitter at [@upliftltd](https://twitter.com/upliftltd),
-or send me an email to [opensource@uplift.ltd](mailto:opensource@uplift.ltd).
-
-## Locally install dependencies
-* Generate egg information `python setup.py egg_info`
-* Install dependencies `pip install -r django_easy_audit.egg-info/requires.txt`
-
-## Run tests locally
-* `cd ./tests`
-* `python -m manage test`
+Find me on Twitter at [@soynatan](https://twitter.com/soynatan),
+or send me an email to [natancalzolari@gmail.com](mailto:natancalzolari@gmail.com).
