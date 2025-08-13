@@ -12,11 +12,6 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AlterField(
             model_name='crudevent',
-            name='changed_fields',
-            field=models.TextField(blank=True, default='', verbose_name='Changed fields'),
-        ),
-        migrations.AlterField(
-            model_name='crudevent',
             name='object_json_repr',
             field=models.TextField(blank=True, default='', verbose_name='Object JSON representation'),
         ),
