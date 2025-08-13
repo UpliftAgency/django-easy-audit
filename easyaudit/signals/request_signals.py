@@ -2,6 +2,7 @@ import re
 from importlib import import_module
 
 from django.conf import settings
+from django.contrib.auth import SESSION_KEY as AUTH_SESSION_KEY
 from django.contrib.auth import get_user_model
 from django.contrib.sessions.models import Session
 from django.core.signals import request_started
@@ -9,12 +10,15 @@ from django.http.cookie import SimpleCookie
 from django.utils import timezone
 from django.utils.module_loading import import_string
 
-# try and get the user from the request; commented for now, may have a bug in this flow.
-# from easyaudit.middleware.easyaudit import get_current_user
-from easyaudit.settings import (LOGGING_BACKEND, REGISTERED_URLS,
-                                REMOTE_ADDR_HEADER, UNREGISTERED_URLS,
-                                WATCH_REQUEST_EVENTS)
+from easyaudit.settings import (
+    LOGGING_BACKEND,
+    REGISTERED_URLS,
+    REMOTE_ADDR_HEADER,
+    UNREGISTERED_URLS,
+    WATCH_REQUEST_EVENTS,
+)
 
+session_engine = import_module(settings.SESSION_ENGINE)
 audit_logger = import_string(LOGGING_BACKEND)()
 
 # Loads the correct SessionStore based on the project configuration
@@ -58,14 +62,12 @@ def request_started_handler(sender, **kwargs):
         cookie_string = headers.get(b"cookie")
         if isinstance(cookie_string, bytes):
             cookie_string = cookie_string.decode("utf-8")
-        remote_ip = list(scope.get('client', ('0.0.0.0', 0)))[0]
+        remote_ip = next(iter(scope.get("client", ("0.0.0.0", 0))))  # noqa: S104
         query_string = scope.get("query_string")
 
     if not should_log_url(path):
         return
 
-    # try and get the user from the request; commented for now, may have a bug in this flow.
-    # user = get_current_user()
     user = None
 
     # get the user from cookies
@@ -78,20 +80,19 @@ def request_started_handler(sender, **kwargs):
             session_id = cookie[session_cookie_name].value
 
             try:
-                session = SessionStore(session_key=session_id)
-                session.load()
+                session = session_engine.SessionStore(session_key=session_id).load()
             except Session.DoesNotExist:
                 session = None
 
-            if session:
-                user_id = session.get('_auth_user_id')
+            if session and AUTH_SESSION_KEY in session:
+                user_id = session.get(AUTH_SESSION_KEY)
                 try:
                     user = get_user_model().objects.get(id=user_id)
                 except Exception:
                     user = None
 
     # may want to wrap this in an atomic transaction later
-    request_event = audit_logger.request(
+    audit_logger.request(
         {
             "url": path,
             "method": method,
