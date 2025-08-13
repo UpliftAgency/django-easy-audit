@@ -1,9 +1,11 @@
 # ruff: noqa: PLR0913
+import json
 import logging
 from functools import partial
 
 from django.conf import settings
 from django.core import serializers
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db import transaction
 from django.db.models import signals
 from django.utils.encoding import force_str
@@ -119,7 +121,7 @@ def pre_save(sender, instance, raw, using, update_fields, **kwargs):
                     pre_save_crud_flow,
                     instance=instance,
                     object_json_repr=object_json_repr,
-                    changed_fields=delta,
+                    changed_fields=json.dumps(delta),
                 )
 
                 if getattr(settings, "TEST", False):
@@ -198,7 +200,7 @@ def m2m_changed(sender, instance, action, reverse, model, pk_set, using, **kwarg
 
                 # Add reverse M2M changes to event. Must use json lib because
                 # django serializers ignore extra fields.
-                tmp_repr = object_json_repr
+                tmp_repr = json.loads(object_json_repr)
 
                 m2m_rev_field = _m2m_rev_field_name(instance._meta.concrete_model, model)
                 related_instances = getattr(instance, m2m_rev_field).all()
@@ -207,7 +209,7 @@ def m2m_changed(sender, instance, action, reverse, model, pk_set, using, **kwarg
                 tmp_repr[0]["m2m_rev_model"] = force_str(model._meta)
                 tmp_repr[0]["m2m_rev_pks"] = related_ids
                 tmp_repr[0]["m2m_rev_action"] = action
-                object_json_repr = tmp_repr
+                object_json_repr = json.dumps(tmp_repr, cls=DjangoJSONEncoder)
             else:
                 forward_actions = {
                     "post_add": CRUDEvent.M2M_ADD,

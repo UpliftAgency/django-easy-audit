@@ -90,7 +90,7 @@ class TestAuditModels:
         assert crud_event_qs.count() == 1
 
         crud_event = crud_event_qs.first()
-        data = crud_event.object_json_repr[0]
+        data = json.loads(crud_event.object_json_repr)[0]
         assert data["fields"]["name"] == obj.name
 
     def test_fk_model(self, model, fk_model):
@@ -101,7 +101,7 @@ class TestAuditModels:
         crud_event = CRUDEvent.objects.filter(
             object_id=obj_fk.id, content_type=ContentType.objects.get_for_model(obj_fk)
         ).first()
-        data = crud_event.object_json_repr[0]
+        data = json.loads(crud_event.object_json_repr)[0]
         assert str(data["fields"]["test_fk"]) == str(obj.id)
 
     def test_m2m_model(self, model, m2m_model):
@@ -114,7 +114,7 @@ class TestAuditModels:
             object_id=obj_m2m.id,
             content_type=ContentType.objects.get_for_model(obj_m2m),
         ).first()
-        data = crud_event.object_json_repr[0]
+        data = json.loads(crud_event.object_json_repr)[0]
         assert [str(d) for d in data["fields"]["test_m2m"]] == [str(obj.id)]
 
     def test_m2m_clear(self, model, m2m_model):
@@ -128,7 +128,7 @@ class TestAuditModels:
             object_id=obj_m2m.id,
             content_type=ContentType.objects.get_for_model(obj_m2m),
         ).first()
-        data = crud_event.object_json_repr[0]
+        data = json.loads(crud_event.object_json_repr)[0]
         assert [str(d) for d in data["fields"]["test_m2m"]] == []
 
     @pytest.mark.usefixtures("no_changed_fields_skip")
