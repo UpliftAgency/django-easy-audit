@@ -21,10 +21,6 @@ from easyaudit.settings import (
 session_engine = import_module(settings.SESSION_ENGINE)
 audit_logger = import_string(LOGGING_BACKEND)()
 
-# Loads the correct SessionStore based on the project configuration
-# https://docs.djangoproject.com/en/4.1/topics/http/sessions/#using-sessions-out-of-views
-SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
-
 
 def should_log_url(url):
     # check if current url is blacklisted
@@ -69,13 +65,11 @@ def request_started_handler(sender, **kwargs):
         return
 
     user = None
-
     # get the user from cookies
     if not user and cookie_string:
         cookie = SimpleCookie()
         cookie.load(cookie_string)
         session_cookie_name = settings.SESSION_COOKIE_NAME
-
         if session_cookie_name in cookie:
             session_id = cookie[session_cookie_name].value
 

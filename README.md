@@ -206,7 +206,7 @@ class ModelA(models.Model):
 
 class ModelB(models.Model):
     parent = models.ForeignKey(ModelA, ...)
-    
+
     ...
 
     def get_easyaudit_metadata(self, *args, **kwargs):
@@ -217,16 +217,16 @@ class ModelB(models.Model):
 
 class ModelC(models.Model):
     EASY_AUDIT_METADATA_METHOD = "fetch_metadata"
-    
+
     ...
-    
+
     parent = models.ForeignKey(ModelB, ...)
 
     ...
 
     def fetch_metadata(self, changed_fields):
-        metadata = dict(model_b_id=self.parent_id, model_a_id=self.parent.parent_id) 
-        
+        metadata = dict(model_b_id=self.parent_id, model_a_id=self.parent.parent_id)
+
         if changed_fields:
           # Update the metadata somehow from the changed_fields
             ...

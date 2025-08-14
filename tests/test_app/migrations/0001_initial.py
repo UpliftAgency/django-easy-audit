@@ -82,7 +82,7 @@ class Migration(migrations.Migration):
                 ('test_fk', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='test_app.uuidmodel')),
             ],
         ),
-                migrations.CreateModel(
+        migrations.CreateModel(
             name='MetadataAModel',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),

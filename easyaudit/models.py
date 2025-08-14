@@ -66,15 +66,6 @@ class CRUDEvent(models.Model):
     )
     datetime = models.DateTimeField(auto_now_add=True, verbose_name=_("Date time"))
 
-    def is_create(self):
-        return self.CREATE == self.event_type
-
-    def is_update(self):
-        return self.UPDATE == self.event_type
-
-    def is_delete(self):
-        return self.DELETE == self.event_type
-
     class Meta:
         verbose_name = _("CRUD event")
         verbose_name_plural = _("CRUD events")
