@@ -15,4 +15,10 @@ class Migration(migrations.Migration):
             name='event_type',
             field=models.SmallIntegerField(choices=[(1, 'Create'), (2, 'Update'), (3, 'Delete'), (4, 'Many-to-Many Change'), (5, 'Reverse Many-to-Many Change'), (6, 'Many-to-Many Add'), (7, 'Reverse Many-to-Many Add'), (8, 'Many-to-Many Remove'), (9, 'Reverse Many-to-Many Remove'), (10, 'Many-to-Many Clear'), (11, 'Reverse Many-to-Many Clear')], verbose_name='Event type'),
         ),
+        # Already applied, moved to a previous migration
+        migrations.AddField(
+            model_name='crudevent',
+            name='metadata',
+            field=models.JSONField(blank=True, null=True, verbose_name='Metadata'),
+        ),
     ]
