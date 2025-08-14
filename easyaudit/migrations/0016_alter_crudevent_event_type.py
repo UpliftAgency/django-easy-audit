@@ -21,4 +21,14 @@ class Migration(migrations.Migration):
             name='metadata',
             field=models.JSONField(blank=True, null=True, verbose_name='Metadata'),
         ),
+        migrations.AlterField(
+            model_name='crudevent',
+            name='changed_fields',
+            field=models.JSONField(blank=True, null=True, verbose_name='Changed fields'),
+        ),
+        migrations.AlterField(
+            model_name='crudevent',
+            name='object_json_repr',
+            field=models.TextField(blank=True, default='', verbose_name='Object JSON representation'),
+        ),
     ]
