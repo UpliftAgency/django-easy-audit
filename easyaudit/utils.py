@@ -107,7 +107,9 @@ def should_propagate_exceptions():
 
 
 def get_model_queryset(model):
-    queryset_method_name = getattr(model, "EASY_AUDIT_QUERYSET_METHOD", "get_easyaudit_queryset")
+    queryset_method_name = getattr(
+        model, "EASY_AUDIT_QUERYSET_METHOD", "get_easyaudit_queryset"
+    )
     queryset_method = getattr(model, queryset_method_name, None)
 
     if callable(queryset_method):
@@ -117,7 +119,9 @@ def get_model_queryset(model):
 
 
 def get_instance_metadata(instance, changed_fields=None):
-    metadata_method_name = getattr(instance, "EASY_AUDIT_METADATA_METHOD", "get_easyaudit_metadata")
+    metadata_method_name = getattr(
+        instance, "EASY_AUDIT_METADATA_METHOD", "get_easyaudit_metadata"
+    )
     metadata_method = getattr(instance, metadata_method_name, None)
 
     if callable(metadata_method):

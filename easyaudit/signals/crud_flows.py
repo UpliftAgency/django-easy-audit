@@ -14,7 +14,11 @@ from django.utils.module_loading import import_string
 from easyaudit.middleware.easyaudit import get_current_user
 from easyaudit.models import CRUDEvent
 from easyaudit.settings import DATABASE_ALIAS, LOGGING_BACKEND
-from easyaudit.utils import get_instance_metadata, get_m2m_field_name, should_propagate_exceptions
+from easyaudit.utils import (
+    get_instance_metadata,
+    get_m2m_field_name,
+    should_propagate_exceptions,
+)
 
 logger = logging.getLogger(__name__)
 audit_logger = import_string(LOGGING_BACKEND)()

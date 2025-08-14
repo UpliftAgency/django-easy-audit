@@ -249,7 +249,7 @@ class TestMetadataModels:
         crud_event_qs = CRUDEvent.objects.filter(
             object_id=obj_a.id,
             content_type=ContentType.objects.get_for_model(MetadataAModel),
-            metadata__isnull=True
+            metadata__isnull=True,
         )
         assert crud_event_qs.count() == 1
 
@@ -257,7 +257,7 @@ class TestMetadataModels:
         crud_event_qs = CRUDEvent.objects.filter(
             object_id=obj_b.id,
             content_type=ContentType.objects.get_for_model(MetadataBModel),
-            metadata=dict(model_a_id=obj_a.id)
+            metadata=dict(model_a_id=obj_a.id),
         )
         assert crud_event_qs.count() == 1
 
@@ -267,7 +267,7 @@ class TestMetadataModels:
             object_id=obj_b.id,
             content_type=ContentType.objects.get_for_model(MetadataBModel),
             metadata__model_a_id=obj_a.id,
-            metadata__last_name_change__isnull=False
+            metadata__last_name_change__isnull=False,
         )
         assert crud_event_qs.count() == 1
 
@@ -275,15 +275,12 @@ class TestMetadataModels:
         crud_event_qs = CRUDEvent.objects.filter(
             object_id=obj_c.id,
             content_type=ContentType.objects.get_for_model(MetadataCModel),
-            metadata=dict(model_a_id=obj_a.id, model_b_id=obj_b.id)
+            metadata=dict(model_a_id=obj_a.id, model_b_id=obj_b.id),
         )
         assert crud_event_qs.count() == 1
 
-        crud_event_qs = CRUDEvent.objects.filter(
-            metadata__model_a_id=obj_a.id
-        )
+        crud_event_qs = CRUDEvent.objects.filter(metadata__model_a_id=obj_a.id)
         assert crud_event_qs.count() == 3
-
 
 
 class TestAuditBigIntModels(TestAuditModels):
