@@ -82,4 +82,27 @@ class Migration(migrations.Migration):
                 ('test_fk', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='test_app.uuidmodel')),
             ],
         ),
+                migrations.CreateModel(
+            name='MetadataAModel',
+            fields=[
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('name', models.CharField(default='metadata A', max_length=50)),
+            ],
+        ),
+        migrations.CreateModel(
+            name='MetadataBModel',
+            fields=[
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('name', models.CharField(default='metadata B', max_length=50)),
+                ('model_a', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='test_app.metadataamodel')),
+            ],
+        ),
+        migrations.CreateModel(
+            name='MetadataCModel',
+            fields=[
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('name', models.CharField(default='metadata C', max_length=50)),
+                ('model_b', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='test_app.metadatabmodel')),
+            ],
+        ),
     ]

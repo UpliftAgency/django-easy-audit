@@ -48,6 +48,7 @@ class CRUDEvent(models.Model):
     changed_fields = models.JSONField(
         null=True, blank=True, verbose_name=_("Changed fields")
     )
+    metadata = models.JSONField(null=True, blank=True, verbose_name=_("Metadata"))
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
@@ -64,6 +65,15 @@ class CRUDEvent(models.Model):
         verbose_name=_("User PK as string"),
     )
     datetime = models.DateTimeField(auto_now_add=True, verbose_name=_("Date time"))
+
+    def is_create(self):
+        return self.CREATE == self.event_type
+
+    def is_update(self):
+        return self.UPDATE == self.event_type
+
+    def is_delete(self):
+        return self.DELETE == self.event_type
 
     class Meta:
         verbose_name = _("CRUD event")
