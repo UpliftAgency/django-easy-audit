@@ -1,21 +1,18 @@
 # makes easy-audit thread-safe
-import contextlib
-from typing import Callable
-
-from asgiref.local import Local
-from asgiref.sync import iscoroutinefunction, markcoroutinefunction
-from django.http.request import HttpRequest
-from django.http.response import HttpResponse
+try:
+    from threading import local
+except ImportError:
+    from django.utils._threading_local import local
 
 
-class MockRequest:
+class MockRequest(object):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop("user", None)
         self.user = user
-        super().__init__(*args, **kwargs)
+        super(MockRequest, self).__init__(*args, **kwargs)
 
 
-_thread_locals = Local()
+_thread_locals = local()
 
 
 def get_current_request():
@@ -26,7 +23,6 @@ def get_current_user():
     request = get_current_request()
     if request:
         return getattr(request, "user", None)
-    return None
 
 
 def set_current_user(user):
@@ -38,37 +34,28 @@ def set_current_user(user):
 
 
 def clear_request():
-    with contextlib.suppress(AttributeError):
+    try:
         del _thread_locals.request
+    except AttributeError:
+        pass
 
 
 class EasyAuditMiddleware:
-    async_capable = True
-    sync_capable = True
+    """Makes request available to this app signals."""
 
-    def __init__(self, get_response: Callable[[HttpRequest], HttpResponse]) -> None:
+    def __init__(self, get_response=None):
         self.get_response = get_response
-        if iscoroutinefunction(self.get_response):
-            markcoroutinefunction(self)
 
-    def __call__(self, request: HttpRequest) -> HttpResponse:
-        if iscoroutinefunction(self):
-            return self.__acall__(request)
-
+    def __call__(self, request):
         _thread_locals.request = request
+
         response = self.get_response(request)
 
-        with contextlib.suppress(AttributeError):
-            del _thread_locals.request
-
         return response
 
-    async def __acall__(self, request: HttpRequest) -> HttpResponse:
-        _thread_locals.request = request
-
-        response = await self.get_response(request)
-
-        with contextlib.suppress(AttributeError):
+    def process_exception(self, request, exception):
+        try:
             del _thread_locals.request
-
-        return response
+        except AttributeError:
+            pass
+        return None
