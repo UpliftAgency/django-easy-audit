@@ -1,6 +1,5 @@
 from collections.abc import Iterable
 import contextlib
-import json
 import logging
 from uuid import UUID
 
@@ -8,7 +7,6 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.contenttypes.models import ContentType
-from django.core.serializers.json import DjangoJSONEncoder
 from django.db import transaction
 from django.utils import timezone
 from django.utils.module_loading import import_string
@@ -105,10 +103,7 @@ def m2m_changed_crud_flow(  # noqa: PLR0913
                 pks = (format_primary_key(pk) for pk in pks)
             else:
                 pks = format_primary_key(pks)
-            changed_fields = json.dumps(
-                {get_m2m_field_name(model, instance): list(pks)},
-                cls=DjangoJSONEncoder,
-            )
+            changed_fields = {get_m2m_field_name(model, instance): list(pks)}
         log_event(
             event_type,
             instance,
