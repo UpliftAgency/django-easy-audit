@@ -18,10 +18,10 @@ from tests.test_app.models import (
     BigIntModel,
     ForeignKeyModel,
     M2MModel,
-    Model,
     MetadataAModel,
     MetadataBModel,
     MetadataCModel,
+    Model,
     UUIDForeignKeyModel,
     UUIDM2MModel,
     UUIDModel,
@@ -257,7 +257,7 @@ class TestMetadataModels:
         crud_event_qs = CRUDEvent.objects.filter(
             object_id=obj_b.id,
             content_type=ContentType.objects.get_for_model(MetadataBModel),
-            metadata=dict(model_a_id=obj_a.id),
+            metadata={"model_a_id": obj_a.id},
         )
         assert crud_event_qs.count() == 1
 
@@ -275,7 +275,7 @@ class TestMetadataModels:
         crud_event_qs = CRUDEvent.objects.filter(
             object_id=obj_c.id,
             content_type=ContentType.objects.get_for_model(MetadataCModel),
-            metadata=dict(model_a_id=obj_a.id, model_b_id=obj_b.id),
+            metadata={"model_a_id": obj_a.id, "model_b_id": obj_b.id},
         )
         assert crud_event_qs.count() == 1
 

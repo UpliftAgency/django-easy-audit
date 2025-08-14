@@ -20,7 +20,7 @@ def default_get_datetimefield_value(obj, field):
     return value
 
 
-RESOLVER_MAP = getattr(settings, "DJANGO_EASY_AUDIT_FIELD_VALUE_RESOLVER_MAP", dict())
+RESOLVER_MAP = getattr(settings, "DJANGO_EASY_AUDIT_FIELD_VALUE_RESOLVER_MAP", {})
 RESOLVER_MAP.setdefault(DateTimeField, default_get_datetimefield_value)
 
 
@@ -82,7 +82,6 @@ def get_m2m_field_name(model, instance):
     :return: ManyToManyField name of instance related to model.
     :rtype: str
     """
-
     # When using Multi-table inheritance
     # https://docs.djangoproject.com/en/4.0/topics/db/models/#multi-table-inheritance
     # This might return None because the m2m relation is declared on the parent model

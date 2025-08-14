@@ -1,6 +1,6 @@
-from collections.abc import Iterable
 import contextlib
 import logging
+from collections.abc import Iterable
 from uuid import UUID
 
 from django.conf import settings
