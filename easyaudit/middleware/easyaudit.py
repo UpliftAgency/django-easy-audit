@@ -1,3 +1,5 @@
+import contextlib
+
 # makes easy-audit thread-safe
 try:
     from threading import local
@@ -5,11 +7,11 @@ except ImportError:
     from django.utils._threading_local import local
 
 
-class MockRequest(object):
+class MockRequest:
     def __init__(self, *args, **kwargs):
         user = kwargs.pop("user", None)
         self.user = user
-        super(MockRequest, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
 _thread_locals = local()
@@ -23,6 +25,7 @@ def get_current_user():
     request = get_current_request()
     if request:
         return getattr(request, "user", None)
+    return None
 
 
 def set_current_user(user):
@@ -34,10 +37,8 @@ def set_current_user(user):
 
 
 def clear_request():
-    try:
+    with contextlib.suppress(AttributeError):
         del _thread_locals.request
-    except AttributeError:
-        pass
 
 
 class EasyAuditMiddleware:
@@ -49,13 +50,8 @@ class EasyAuditMiddleware:
     def __call__(self, request):
         _thread_locals.request = request
 
-        response = self.get_response(request)
-
-        return response
+        return self.get_response(request)
 
     def process_exception(self, request, exception):
-        try:
+        with contextlib.suppress(AttributeError):
             del _thread_locals.request
-        except AttributeError:
-            pass
-        return None
