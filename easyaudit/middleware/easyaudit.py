@@ -73,5 +73,6 @@ class EasyAuditMiddleware:
         return response
 
     def thread_cleanup(self, request, response):
+        # Must happen after all signals are processed, hence the use of on_commit
         with contextlib.suppress(AttributeError):
             del _thread_locals.request
