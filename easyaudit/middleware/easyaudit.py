@@ -1,18 +1,22 @@
 # makes easy-audit thread-safe
-try:
-    from threading import local
-except ImportError:
-    from django.utils._threading_local import local
+import contextlib
+from typing import Callable
+
+from asgiref.local import Local
+from asgiref.sync import iscoroutinefunction, markcoroutinefunction, sync_to_async
+from django.db import transaction
+from django.http.request import HttpRequest
+from django.http.response import HttpResponse
 
 
-class MockRequest(object):
+class MockRequest:
     def __init__(self, *args, **kwargs):
         user = kwargs.pop("user", None)
         self.user = user
-        super(MockRequest, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
-_thread_locals = local()
+_thread_locals = Local()
 
 
 def get_current_request():
@@ -23,6 +27,7 @@ def get_current_user():
     request = get_current_request()
     if request:
         return getattr(request, "user", None)
+    return None
 
 
 def set_current_user(user):
@@ -34,28 +39,43 @@ def set_current_user(user):
 
 
 def clear_request():
-    try:
+    with contextlib.suppress(AttributeError):
         del _thread_locals.request
-    except AttributeError:
-        pass
 
 
 class EasyAuditMiddleware:
-    """Makes request available to this app signals."""
+    async_capable = True
+    sync_capable = True
 
-    def __init__(self, get_response=None):
+    def __init__(self, get_response: Callable[[HttpRequest], HttpResponse]) -> None:
         self.get_response = get_response
+        if iscoroutinefunction(self.get_response):
+            markcoroutinefunction(self)
 
-    def __call__(self, request):
+    def __call__(self, request: HttpRequest) -> HttpResponse:
+        if iscoroutinefunction(self):
+            return self.__acall__(request)
+
         _thread_locals.request = request
-
         response = self.get_response(request)
+
+        self._register_commit_callback(request, response)
 
         return response
 
-    def process_exception(self, request, exception):
-        try:
+    async def __acall__(self, request: HttpRequest) -> HttpResponse:
+        _thread_locals.request = request
+
+        response = await self.get_response(request)
+
+        await sync_to_async(self._register_commit_callback)(request, response)
+
+        return response
+
+    def _register_commit_callback(self, request, response):
+        transaction.on_commit(lambda: self._thread_cleanup(request, response))
+
+    def _thread_cleanup(self, request, response):
+        # Must happen after all signals are processed, hence the use of on_commit
+        with contextlib.suppress(AttributeError):
             del _thread_locals.request
-        except AttributeError:
-            pass
-        return None

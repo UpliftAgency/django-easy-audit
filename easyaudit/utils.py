@@ -1,4 +1,4 @@
-from __future__ import unicode_literals
+import datetime as dt
 
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
@@ -13,20 +13,20 @@ def default_get_datetimefield_value(obj, field):
     try:
         value = field.to_python(getattr(obj, field.name, None))
         if value is not None and settings.USE_TZ and not timezone.is_naive(value):
-            value = timezone.make_naive(value, timezone=timezone.utc)
+            value = timezone.make_naive(value, timezone=dt.timezone.utc)
     except ObjectDoesNotExist:
         value = field.default if field.default is not NOT_PROVIDED else None
 
     return value
 
 
-RESOLVER_MAP = getattr(settings, "DJANGO_EASY_AUDIT_FIELD_VALUE_RESOLVER_MAP", dict())
+RESOLVER_MAP = getattr(settings, "DJANGO_EASY_AUDIT_FIELD_VALUE_RESOLVER_MAP", {})
 RESOLVER_MAP.setdefault(DateTimeField, default_get_datetimefield_value)
 
 
 def get_field_value(obj, field):
-    """
-    Gets the value of a given model instance field.
+    """Get the value of a given model instance field.
+
     :param obj: The model instance.
     :type obj: Model
     :param field: The field you want to find the value of.
@@ -46,8 +46,8 @@ def get_field_value(obj, field):
 
 
 def model_delta(old_model, new_model):
-    """
-    Provides delta/difference between two models
+    """Provide delta/difference between two models.
+
     :param old: The old state of the model instance.
     :type old: Model
     :param new: The new state of the model instance.
@@ -57,15 +57,13 @@ def model_delta(old_model, new_model):
              as value.
     :rtype: dict
     """
-
     delta = {}
     fields = new_model._meta.fields
     for field in fields:
         old_value = get_field_value(old_model, field)
         new_value = get_field_value(new_model, field)
         if old_value != new_value:
-            delta[field.name] = [smart_str(old_value),
-                                 smart_str(new_value)]
+            delta[field.name] = [smart_str(old_value), smart_str(new_value)]
 
     if len(delta) == 0:
         delta = None
@@ -74,8 +72,8 @@ def model_delta(old_model, new_model):
 
 
 def get_m2m_field_name(model, instance):
-    """
-    Finds M2M field name on instance
+    """Find M2M field name on instance.
+
     Called from m2m_changed signal
     :param model: m2m_changed signal model.
     :type model: Model
@@ -84,7 +82,6 @@ def get_m2m_field_name(model, instance):
     :return: ManyToManyField name of instance related to model.
     :rtype: str
     """
-
     # When using Multi-table inheritance
     # https://docs.djangoproject.com/en/4.0/topics/db/models/#multi-table-inheritance
     # This might return None because the m2m relation is declared on the parent model
@@ -97,12 +94,36 @@ def get_m2m_field_name(model, instance):
         if x.related_model == model:
             return x.name
 
+    return None
+
+
+def should_propagate_exceptions():
+    """Whether Django Easy Audit should propagate signal handler exceptions.
+
+    :rtype: bool
+    """
+    return getattr(settings, "DJANGO_EASY_AUDIT_PROPAGATE_EXCEPTIONS", False)
+
 
 def get_model_queryset(model):
-    queryset_method_name = getattr(model, "EASY_AUDIT_QUERYSET_METHOD", "get_easyaudit_queryset")
+    queryset_method_name = getattr(
+        model, "EASY_AUDIT_QUERYSET_METHOD", "get_easyaudit_queryset"
+    )
     queryset_method = getattr(model, queryset_method_name, None)
 
     if callable(queryset_method):
         return queryset_method()
 
     return model.objects.all()
+
+
+def get_instance_metadata(instance, changed_fields=None):
+    metadata_method_name = getattr(
+        instance, "EASY_AUDIT_METADATA_METHOD", "get_easyaudit_metadata"
+    )
+    metadata_method = getattr(instance, metadata_method_name, None)
+
+    if callable(metadata_method):
+        return metadata_method(changed_fields)
+
+    return None
