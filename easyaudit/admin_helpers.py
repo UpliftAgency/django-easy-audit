@@ -5,7 +5,8 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
-from django.urls import re_path, reverse
+from django.urls import path
+from django.urls import reverse
 from django.utils.html import escape
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
@@ -67,8 +68,8 @@ class EasyAuditModelAdmin(admin.ModelAdmin):
     def get_urls(self):
         urls = super().get_urls()
         my_urls = [
-            re_path(
-                r"^purge/$",
+            path(
+                "purge/",
                 self.admin_site.admin_view(self.purge),
                 {},
                 name=f"{self.model._meta.app_label}_{self.model._meta.model_name}_purge",
