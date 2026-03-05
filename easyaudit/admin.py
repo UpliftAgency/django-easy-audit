@@ -152,7 +152,9 @@ class LoginEventAdmin(EasyAuditModelAdmin):
     )
     def get_username(self, obj):
         user = self.get_user(obj)
-        return user.get_username() if user else None
+        if user:
+            return user.get_username()
+        return obj.username
 
 
     actions = [export_to_csv]
