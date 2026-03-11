@@ -53,6 +53,15 @@ class BigIntM2MModel(models.Model):
     test_m2m = models.ManyToManyField(BigIntModel)
 
 
+class Tag(models.Model):
+    name = models.CharField(max_length=50)
+
+
+class Article(models.Model):
+    title = models.CharField(max_length=200)
+    tags = models.ManyToManyField(Tag, blank=True)
+
+
 class MetadataAModel(models.Model):
     name = models.CharField(max_length=50, default="metadata A")
 
@@ -83,12 +92,3 @@ class MetadataCModel(models.Model):
             "model_a_id": self.model_b.model_a_id,
             "model_b_id": self.model_b.id,
         }
-
-
-class Tag(models.Model):
-    name = models.CharField(max_length=50)
-
-
-class Article(models.Model):
-    title = models.CharField(max_length=200)
-    tags = models.ManyToManyField(Tag, blank=True)
